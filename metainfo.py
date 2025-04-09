@@ -2,6 +2,10 @@
 from telethon import events
 from .. import loader, utils
 import asyncio
+import requests
+import json
+from datetime import datetime
+import pytz
 
 class MetaInfoMod(loader.Module):
     """недоскрипт dox swat deanon"""
@@ -121,6 +125,96 @@ https://clck.ru/3LAQyk"""
         await message.edit(doxgram_text)
     
     @loader.command()
+    async def time(self, message):
+        """Использование: .time <город>
+        Показывает время в указанном городе"""
+        
+        args = utils.get_args_raw(message)
+        if not args:
+            await message.edit("❌ Укажите город. Например: .time Москва")
+            return
+            
+        try:
+            # Получаем координаты города через OpenStreetMap API
+            geocode_url = f"https://nominatim.openstreetmap.org/search?format=json&q={args}"
+            geocode_response = requests.get(geocode_url, headers={'User-Agent': 'Telegram Bot'})
+            geocode_data = geocode_response.json()
+            
+            if not geocode_data:
+                await message.edit(f"❌ Город '{args}' не найден")
+                return
+                
+            # Получаем часовой пояс по координатам
+            lat = float(geocode_data[0]['lat'])
+            lon = float(geocode_data[0]['lon'])
+            
+            timezone_url = f"https://api.timezonedb.com/v2.1/get-time-zone?key=YOUR_API_KEY&format=json&by=position&lat={lat}&lng={lon}"
+            timezone_response = requests.get(timezone_url)
+            timezone_data = timezone_response.json()
+            
+            if timezone_data['status'] != 'OK':
+                await message.edit("❌ Не удалось определить часовой пояс")
+                return
+                
+            # Получаем время в указанном городе
+            timezone_name = timezone_data['zoneName']
+            city_time = datetime.now(pytz.timezone(timezone_name))
+            
+            # Форматируем время
+            time_text = f"""🕒 <b>Время в городе {args}:</b>
+
+📅 Дата: <code>{city_time.strftime('%d.%m.%Y')}</code>
+⏰ Время: <code>{city_time.strftime('%H:%M:%S')}</code>
+🌍 Часовой пояс: <code>{timezone_name}</code>"""
+            
+            await message.edit(time_text, parse_mode='html')
+            
+        except Exception as e:
+            await message.edit(f"❌ Ошибка: {str(e)}")
+    
+    @loader.command()
+    async def weather(self, message):
+        """Использование: .weather <город>
+        Показывает погоду в указанном городе"""
+        
+        args = utils.get_args_raw(message)
+        if not args:
+            await message.edit("❌ Укажите город. Например: .weather Москва")
+            return
+            
+        try:
+            # Получаем погоду через OpenWeatherMap API
+            api_key = "YOUR_API_KEY"  # Замените на ваш API ключ
+            weather_url = f"https://api.openweathermap.org/data/2.5/weather?q={args}&appid={api_key}&units=metric&lang=ru"
+            weather_response = requests.get(weather_url)
+            weather_data = weather_response.json()
+            
+            if weather_data.get('cod') != 200:
+                await message.edit(f"❌ Город '{args}' не найден")
+                return
+                
+            # Извлекаем данные о погоде
+            temp = weather_data['main']['temp']
+            feels_like = weather_data['main']['feels_like']
+            humidity = weather_data['main']['humidity']
+            wind_speed = weather_data['wind']['speed']
+            description = weather_data['weather'][0]['description']
+            
+            # Форматируем сообщение о погоде
+            weather_text = f"""🌤 <b>Погода в городе {args}:</b>
+
+🌡 Температура: <code>{temp}°C</code>
+🌡 Ощущается как: <code>{feels_like}°C</code>
+💧 Влажность: <code>{humidity}%</code>
+💨 Скорость ветра: <code>{wind_speed} м/с</code>
+☁️ Облачность: <code>{description}</code>"""
+            
+            await message.edit(weather_text, parse_mode='html')
+            
+        except Exception as e:
+            await message.edit(f"❌ Ошибка: {str(e)}")
+    
+    @loader.command()
     async def helpic(self, message):
         """Использование: .helpic
         Показывает информацию о командах"""
@@ -141,6 +235,15 @@ https://clck.ru/3LAQyk"""
 
 📢 <b>.chan</b> - информация о канале
    Подписка и обновление
+
+🕒 <b>.time</b> - время в городе
+   Показывает текущее время
+
+🌤 <b>.weather</b> - погода в городе
+   Показывает текущую погоду
+
+❤️ <b>.love</b> - анимация сердечек
+   Показывает красивую анимацию
 
 by x and paniolof"""
         
@@ -208,4 +311,44 @@ by x and paniolof"""
 <code>.dlm https://raw.githubusercontent.com/Udploda/picurchik/refs/heads/main/metainfo.py</code>"""
         
         # Отправляем сообщение
-        await message.edit(chan_text, parse_mode='html') 
+        await message.edit(chan_text, parse_mode='html')
+    
+    @loader.command()
+    async def love(self, message):
+        """Использование: .love
+        Показывает анимацию с сердечками"""
+        
+        # Анимация с сердечками разного размера
+        heart_frames = [
+            "❤️",
+            "❤️❤️",
+            "❤️❤️❤️",
+            "❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️❤️",
+            "❤️❤️❤️❤️",
+            "❤️❤️❤️",
+            "❤️❤️",
+            "❤️"
+        ]
+        
+        # Показываем анимацию
+        for frame in heart_frames:
+            await message.edit(frame)
+            await asyncio.sleep(0.3)
+        
+        # Финальное сообщение
+        final_text = """❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️
+❤️ ЛЮБОВЬ ❤️
+❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️"""
+        
+        await message.edit(final_text) 
